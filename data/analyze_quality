@@ -1,0 +1,35 @@
+import pandas as pd
+
+def analyze_data_quality(dataset):
+    total_count = len(dataset)
+    disagreement_count = 0
+    hate_without_rationale = 0
+    total_hate_count = 0
+
+    for item in dataset:
+        # 1. Anlaşmazlık Kontrolü (3 kişinin de farklı label vermesi)
+        labels = [a["label"] for a in item["annotators"]]
+        unique_labels = set(labels)
+
+        # Eğer 3 kişi de farklı şey dediyse (hate, normal, offensive)
+        # set uzunluğu 3 olur ve çoğunluk sağlanamaz.
+        if len(unique_labels) == 3:
+            disagreement_count += 1
+
+        # 2. Boş Rationale Kontrolü (Sadece Nefret Söylemi/Offensive olanlar için)
+        # Çoğunluk label'ını bulalım
+        majority_label = max(set(labels), key=labels.count)
+
+        if majority_label in ["hatespeech", "offensive"]:
+            total_hate_count += 1
+            # Rationale listesi boşsa veya sadece 0'lardan oluşuyorsa
+            if not item["rationales"] or sum([sum(r) for r in item["rationales"]]) == 0:
+                hate_without_rationale += 1
+
+    print(f"--- Veri Kalite Raporu ---")
+    print(f"Toplam Veri Sayısı: {total_count}")
+    print(f"Çoğunluk Sağlanamayan (Anlaşmazlık): {disagreement_count} (%{disagreement_count/total_count*100:.2f})")
+    print(f"Toplam Nefret/Ofansif Sayısı: {total_hate_count}")
+    print(f"Gerekçesi (Rationale) Olmayan Nefret Sayısı: {hate_without_rationale} (%{hate_without_rationale/total_hate_count*100:.2f})")
+
+analyze_data_quality(train_ds)
